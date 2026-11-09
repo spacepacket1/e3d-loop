@@ -44,7 +44,7 @@ npm link                     # optional: provides the `e3d` command (else: node 
 e3d doctor --connect         # checks Pi pin, MCP servers, helper model, command conflicts
 ```
 
-Give Pi a model credential one of two ways: run `e3d` and type `/login`, or export a provider key in your environment as [Pi documents](node_modules/@earendil-works/pi-coding-agent/docs/providers.md). To load keys from files at launch instead of your shell profile, copy [config/run.example.sh](config/run.example.sh), edit the paths, keep it outside the repo, and `chmod 700` it. Never commit keys.
+Give Pi a model credential one of two ways: run `e3d` and type `/login`, or export a provider key in your environment as [Pi documents](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/providers.md). To load keys from files at launch instead of your shell profile, copy [config/run.example.sh](config/run.example.sh), edit the paths, keep it outside the repo, and `chmod 700` it. Never commit keys.
 
 Then run `e3d` in a repo. It behaves like `pi`: all flags, `-p`, `--mode rpc`, `-c`, `-r`, `mcp`, `install` pass through.
 
