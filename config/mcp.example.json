@@ -1,0 +1,20 @@
+{
+  "_comment": "Copy the servers you want into ~/.pi/agent/mcp.json. Paths are examples; no secrets belong here.",
+  "mcpServers": {
+    "e3d-pilot": {
+      "command": "node",
+      "args": ["~/e3d-pilot/bin/e3d-mcp"],
+      "description": "E3D Pilot (local): multi-model debate, investigation, pipeline tools"
+    },
+    "e3d-pilot-hosted": {
+      "url": "https://pilot.e3d.ai/mcp",
+      "description": "E3D Pilot hosted council. Signs in via /mcp login; spends credits"
+    },
+    "futco-brain": {
+      "command": "node",
+      "args": ["~/e3d-brain/dist/src/cli/main.js", "mcp"],
+      "env": { "EBRAIN_CONFIG": "${EBRAIN_CONFIG}" },
+      "description": "E3D Brain: search/read notes, capture to inbox, report_use"
+    }
+  }
+}

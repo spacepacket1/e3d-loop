@@ -1,0 +1,4 @@
+{
+  "helper": { "model": "openai/gpt-5.1", "thinking": "medium", "timeoutSec": 300, "maxTurns": 12, "maxCostUsd": 0.5 },
+  "allowWebSearch": false
+}
