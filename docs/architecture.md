@@ -38,4 +38,4 @@ E3D Loop is **a Pi package plus a thin launcher**, not a fork. `bin/e3d.mjs` run
 1. **(this milestone)** Pi + MCP config + guidance + one read-only helper + doctor + compat tests.
 2. Policy broker/isolated profile, verification receipts, structured review cycles, budgets, recovery.
 3. Pilot/Brain first-class: capability negotiation, handoff with ownership, provenance, report_use.
-4. Parallel helpers, wider ecosystem. 5. Distribution.
+4. Parallel helpers, wider ecosystem.
