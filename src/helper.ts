@@ -86,7 +86,10 @@ export async function runHelper(req: HelperRequest): Promise<HelperRecord> {
     ({ session } = await createAgentSession({ cwd: snap.dir, modelRuntime, model, thinkingLevel: config.helper.thinking, tools: HELPER_TOOLS, sessionManager: SessionManager.inMemory(snap.dir), resourceLoader: loader }));
     req.signal?.addEventListener("abort", () => { cancelled = true; void session.abort(); }, { once: true });
     session.subscribe((ev: any) => {
-      if (ev.type === "turn_end") { turns++; req.onProgress?.(`helper turn ${turns}/${config.helper.maxTurns}`); if (turns > config.helper.maxTurns) stop(`maxTurns ${config.helper.maxTurns} reached`); }
+      if (ev.type === "turn_end") { turns++; req.onProgress?.(`helper turn ${turns}/${config.helper.maxTurns}`);
+        // Ask for a wrap-up two turns before the cap instead of discarding the work at the cap.
+        if (turns === config.helper.maxTurns - 2 && !text.includes("```json")) void session.steer("Turn budget nearly exhausted. Stop reading now and reply with your summary and the final json block, using only what you have already seen. List anything unfinished under unresolved.");
+        if (turns > config.helper.maxTurns) stop(`maxTurns ${config.helper.maxTurns} reached`); }
       if (ev.type === "message_end" && ev.message?.role === "assistant") {
         const m = ev.message;
         rec.actual = { provider: m.provider ?? rec.actual?.provider ?? "unknown", model: m.model ?? rec.actual?.model ?? "unknown" };
