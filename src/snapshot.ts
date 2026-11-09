@@ -37,7 +37,8 @@ export function createSnapshot(cwd: string, limits: { maxFiles: number; maxBytes
     }
   } catch (e) { rmSync(dir, { recursive: true, force: true }); throw e; }
   let baseRevision = "unknown"; try { baseRevision = git("rev-parse", "HEAD").trim(); } catch { /* no commits */ }
-  const dirty = git("status", "--porcelain").trim().length > 0;
+  let dirty: boolean;
+  try { dirty = git("status", "--porcelain").trim().length > 0; } catch (e) { disposeSnapshot({ dir } as Snapshot); throw e; }
   return { dir, digest: hash.digest("hex"), fileCount, bytes, baseRevision, dirty, excluded };
 }
 

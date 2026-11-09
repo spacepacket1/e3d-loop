@@ -18,7 +18,7 @@ function mcpServers(cwd: string): Record<string, any> {
 
 export async function runDoctor(opts: { cwd: string; connect?: boolean; pi?: string }): Promise<Check[]> {
   const c: Check[] = [];
-  const pinned = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")).dependencies["@earendil-works/pi-coding-agent"];
+  const pinned = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")).devDependencies["@earendil-works/pi-coding-agent"];
   c.push({ name: "node", status: Number(process.versions.node.split(".")[0]) >= 22 ? "ok" : "fail", detail: process.version + " (Pi needs >=22.19)" });
   c.push({ name: "pi version", status: VERSION === pinned ? "ok" : "warn", detail: `running ${VERSION}, E3D Loop tested against ${pinned}` });
   c.push({ name: "execution profile", status: "warn", detail: "local-trusted: Pi has no sandbox; tools run as you on this machine. No isolated profile exists yet." });

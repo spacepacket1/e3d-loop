@@ -10,6 +10,8 @@ export interface LoopConfig {
     timeoutSec: number;
     maxTurns: number;
     maxCostUsd: number;
+    /** Backstop when a provider reports no cost: total input+output tokens across turns. */
+    maxTokens: number;
     maxSnapshotFiles: number;
     maxSnapshotBytes: number;
   };
@@ -18,7 +20,7 @@ export interface LoopConfig {
 }
 
 export const DEFAULTS: LoopConfig = {
-  helper: { model: null, thinking: "medium", timeoutSec: 300, maxTurns: 12, maxCostUsd: 0.5, maxSnapshotFiles: 5000, maxSnapshotBytes: 50_000_000 },
+  helper: { model: null, thinking: "medium", timeoutSec: 300, maxTurns: 12, maxCostUsd: 0.5, maxTokens: 400_000, maxSnapshotFiles: 5000, maxSnapshotBytes: 50_000_000 },
   allowWebSearch: false,
 };
 

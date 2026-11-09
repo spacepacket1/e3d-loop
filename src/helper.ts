@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
+import { realpathSync } from "node:fs";
+import { isAbsolute, resolve, sep } from "node:path";
 import { createAgentSession, DefaultResourceLoader, getAgentDir, ModelRuntime, SessionManager } from "@earendil-works/pi-coding-agent";
 import type { LoopConfig } from "./config.ts";
 import { stateDir } from "./config.ts";
@@ -8,6 +10,19 @@ import type { CheckedFinding } from "./evidence.ts";
 import { createSnapshot, disposeSnapshot } from "./snapshot.ts";
 
 export const HELPER_TOOLS = ["read", "grep", "find", "ls"]; // no bash/edit/write: a read-only helper must not execute repo code
+
+/** Policy-hook confinement of the helper's file tools to the snapshot. A hook, not an OS sandbox: it covers the
+ *  tools we enable (read/grep/find/ls all take `path`). Returns a block reason, or null if the path is inside. */
+export function confineToSnapshot(snapDir: string, input: any): string | null {
+  const base = realpathSync(snapDir);
+  const raw = typeof input?.path === "string" ? input.path : ".";
+  // Pi's tools expand a leading "~" to the home directory, so it must never be treated as a relative name.
+  if (raw.startsWith("~") || raw.includes("\0")) return `path outside the snapshot is not allowed: ${raw}`;
+  const abs = isAbsolute(raw) ? raw : resolve(base, raw);
+  let real: string; try { real = realpathSync(abs); } catch { real = resolve(abs); }
+  if (real !== base && !real.startsWith(base + sep)) return `path outside the snapshot is not allowed: ${raw}`;
+  return null;
+}
 
 const PROMPT = (role: string) => `You are an independent ${role} helping another engineer's agent. You see a frozen read-only snapshot of a repository.
 You can only read, grep, find and ls. You cannot run code, tests or builds; do not claim that anything passes or runs.
@@ -49,7 +64,9 @@ export async function runHelper(req: HelperRequest): Promise<HelperRecord> {
   let session: any; let text = ""; let turns = 0; let blockedReason: string | undefined; let cancelled = false;
   const usage = { inputTokens: 0, outputTokens: 0, costUsd: 0, costBasis: "observed-or-catalog-estimate" as const };
   const timers: NodeJS.Timeout[] = [];
+  const stop = (why: string) => { blockedReason ??= why; void session?.abort(); };
   try {
+    timers.push(setTimeout(() => stop(`timeout after ${config.helper.timeoutSec}s`), config.helper.timeoutSec * 1000)); // armed before setup
     const modelRuntime = await ModelRuntime.create();
     let model: any;
     if (config.helper.model) {
@@ -61,14 +78,15 @@ export async function runHelper(req: HelperRequest): Promise<HelperRecord> {
     }
     rec.independentFromForeground = !!config.helper.model && !!req.foregroundModel &&
       config.helper.model !== `${req.foregroundModel.provider}/${req.foregroundModel.id}`;
-    const loader = new DefaultResourceLoader({ cwd: snap.dir, agentDir: getAgentDir(), noExtensions: true, noSkills: true, noPromptTemplates: true, noThemes: true, noContextFiles: true, systemPrompt: PROMPT(req.role) });
+    const loader = new DefaultResourceLoader({ cwd: snap.dir, agentDir: getAgentDir(), noSkills: true, noPromptTemplates: true, noThemes: true, noContextFiles: true,
+      // Only the confinement extension is inline; no MCP, no Pilot, no loop_investigate (so no recursion).
+      extensionFactories: [(pi: any) => { pi.on("tool_call", async (e: any) => { const why = confineToSnapshot(snap.dir, e.input); return why ? { block: true, reason: why } : undefined; }); }],
+      systemPrompt: PROMPT(req.role) });
     await loader.reload();
     ({ session } = await createAgentSession({ cwd: snap.dir, modelRuntime, model, thinkingLevel: config.helper.thinking, tools: HELPER_TOOLS, sessionManager: SessionManager.inMemory(snap.dir), resourceLoader: loader }));
-    const stop = (why: string) => { blockedReason ??= why; void session.abort(); };
-    timers.push(setTimeout(() => stop(`timeout after ${config.helper.timeoutSec}s`), config.helper.timeoutSec * 1000));
     req.signal?.addEventListener("abort", () => { cancelled = true; void session.abort(); }, { once: true });
     session.subscribe((ev: any) => {
-      if (ev.type === "turn_end") { turns++; req.onProgress?.(`helper turn ${turns}/${config.helper.maxTurns}`); if (turns >= config.helper.maxTurns) stop(`maxTurns ${config.helper.maxTurns} reached`); }
+      if (ev.type === "turn_end") { turns++; req.onProgress?.(`helper turn ${turns}/${config.helper.maxTurns}`); if (turns > config.helper.maxTurns) stop(`maxTurns ${config.helper.maxTurns} reached`); }
       if (ev.type === "message_end" && ev.message?.role === "assistant") {
         const m = ev.message;
         rec.actual = { provider: m.provider ?? rec.actual?.provider ?? "unknown", model: m.model ?? rec.actual?.model ?? "unknown" };
@@ -76,6 +94,7 @@ export async function runHelper(req: HelperRequest): Promise<HelperRecord> {
         const t = (Array.isArray(m.content) ? m.content : []).filter((c: any) => c.type === "text").map((c: any) => c.text).join("");
         if (t) text = t;
         if (usage.costUsd > config.helper.maxCostUsd) stop(`cost cap $${config.helper.maxCostUsd} exceeded`);
+        if (usage.inputTokens + usage.outputTokens > config.helper.maxTokens) stop(`token cap ${config.helper.maxTokens} exceeded (backstop: cost may be unreported)`);
       }
     });
     const focus = req.focusPaths?.length ? `\nStart with: ${req.focusPaths.join(", ")}` : "";
@@ -86,9 +105,8 @@ export async function runHelper(req: HelperRequest): Promise<HelperRecord> {
     timers.forEach(clearTimeout);
     try { session?.dispose(); } catch { /* already gone */ }
   }
-  const parsed = parseHelperOutput(text);
-  const findings = checkFindings(snap.dir, parsed.findings);
-  disposeSnapshot(snap);
+  let parsed: ReturnType<typeof parseHelperOutput>; let findings: CheckedFinding[];
+  try { parsed = parseHelperOutput(text); findings = checkFindings(snap.dir, parsed.findings); } finally { disposeSnapshot(snap); }
   rec.status = cancelled ? "cancelled" : rec.status === "failed" ? "failed" : blockedReason ? "blocked" : text ? "succeeded" : "failed";
   Object.assign(rec, { blockedReason, turns, usage, summary: parsed.summary, findings, unresolved: parsed.unresolved, outputParsed: parsed.parsed, rawText: text, endedAt: new Date().toISOString() });
   let root = req.cwd; try { root = execFileSync("git", ["-C", req.cwd, "rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim(); } catch { /* keep cwd */ }

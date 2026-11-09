@@ -64,3 +64,17 @@ test("config defaults: web search off, no helper model unless configured", () =>
   const c = loadConfig("/nonexistent/config.json");
   assert.equal(c.allowWebSearch, false); assert.equal(c.helper.model, null);
 });
+
+import { confineToSnapshot } from "../src/helper.ts";
+test("confinement blocks absolute paths, .. escapes and symlink escapes; allows inside", () => {
+  const d = repo(); const s = createSnapshot(d, { maxFiles: 100, maxBytes: 1e6 });
+  assert.equal(confineToSnapshot(s.dir, { path: "src/a.js" }), null);
+  assert.equal(confineToSnapshot(s.dir, {}), null);
+  assert.match(confineToSnapshot(s.dir, { path: "/etc/hosts" }), /outside/);
+  assert.match(confineToSnapshot(s.dir, { path: "../../etc/hosts" }), /outside/);
+  assert.match(confineToSnapshot(s.dir, { path: "~" }), /outside/);
+  assert.match(confineToSnapshot(s.dir, { path: "~/.ssh" }), /outside/);
+  symlinkSync("/etc", join(s.dir, "sneaky"));
+  assert.match(confineToSnapshot(s.dir, { path: "sneaky/hosts" }), /outside/);
+  disposeSnapshot(s);
+});
