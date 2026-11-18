@@ -81,6 +81,12 @@ Write a phased spec (`## Phase N - Title`), then ask the agent to implement it. 
 
 Writers via e3d-code: Claude and OpenAI (Codex) only. Gemini, Grok, Qwen (local) and Devin are not code writers yet. Gemini, Grok and Qwen can be helpers and reviewers through Pi (`implement.reviewers` in config); `e3d doctor` lists all six. Qwen needs `node bin/sse-shim.mjs` and the `qwen-local` provider from `config/models.example.json`. Devin is detected only; it is not wired in.
 
+### Shared memory (Brain) in `loop_implement`
+
+By default `loop_implement` also reads Brain (read-only) and shares the result with **every** model in the run. It searches with the spec and phase titles (or `brain_query`, or exact `brain_paths`), keeps only accepted notes, and writes a labelled packet (`.loop-context/brain.md`, never committed). The writer is told to read it through e3d-code's `--read`, and each reviewer gets the same text in its prompt, so a Claude writer and a Codex writer, then a GPT reviewer and a Claude reviewer, all see the same revision-pinned notes (`note:<id>@<rev>`). The run record lists what each phase was given. The packet is marked as reference data, not instructions. If Brain is down the run continues and says so.
+
+`capture_lesson` proposes one note to Brain's **review inbox** after the run (you confirm in the UI; non-interactive use needs `E3D_LOOP_ALLOW_BRAIN_CAPTURE=1`). It records which model wrote and reviewed each phase, the exit codes and commits, and the notes provided. It never writes curated memory and does not call `report_use`: Loop cannot tell whether a model used a note, so "provided" is not recorded as "helped". Not tested: whether shared memory improves results. Writers run without a sandbox and can read your disk, so they may find the same facts elsewhere.
+
 ## Known gotchas
 
 - `e3d -p` waits forever if stdin stays open (for example under a script or CI). Use `e3d -p "..." </dev/null`.

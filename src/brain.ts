@@ -46,7 +46,8 @@ export async function buildBrainContext(o: BrainOpts): Promise<BrainContext> {
       const r = parseRead(raw); if (!r.meta.id || !r.meta.rev) continue;
       notes.push({ id: r.meta.id, rev: r.meta.rev, path: r.meta.path ?? path, status: r.meta.status ?? "unknown", citation: cite(r.meta), body: r.body, truncated: r.truncated });
     }
-    return { notes, recallIds: recallIds.filter(Boolean), query: o.query ?? "(explicit paths)", markdown: formatContext(notes, o.query) };
+    const label = o.paths?.length ? undefined : o.query; // explicit notes were not "retrieved for" a query
+    return { notes, recallIds: recallIds.filter(Boolean), query: o.paths?.length ? "(explicit notes)" : o.query ?? "", markdown: formatContext(notes, label) };
   } finally { own?.close(); }
 }
 
