@@ -17,11 +17,25 @@ export interface LoopConfig {
   };
   /** Pilot web search must stay off for private-code consultations. */
   allowWebSearch: boolean;
+  implement: {
+    /** Path or command name of the e3d-code runner. */
+    e3dCodeBin: string;
+    /** Per-phase wall clock for e3d-code, and for the check command. */
+    phaseTimeoutSec: number;
+    checkTimeoutSec: number;
+    /** Reviewer per writer family ("claude" = Claude CLI, "codex" = Codex CLI), as "provider/modelId". A different family reviews each phase. */
+    reviewers: Record<string, string>;
+    reviewMaxDiffChars: number;
+  };
 }
 
 export const DEFAULTS: LoopConfig = {
   helper: { model: null, thinking: "medium", timeoutSec: 300, maxTurns: 12, maxCostUsd: 0.5, maxTokens: 400_000, maxSnapshotFiles: 5000, maxSnapshotBytes: 50_000_000 },
   allowWebSearch: false,
+  implement: {
+    e3dCodeBin: "e3d-code", phaseTimeoutSec: 1800, checkTimeoutSec: 600, reviewMaxDiffChars: 24000,
+    reviewers: { claude: "openai/gpt-5.5", codex: "anthropic/claude-sonnet-5-5" },
+  },
 };
 
 export function configPath(): string {
@@ -35,5 +49,6 @@ export function stateDir(): string {
 export function loadConfig(path = configPath()): LoopConfig {
   let user: any = {};
   try { user = JSON.parse(readFileSync(path, "utf8")); } catch { /* absent or invalid: defaults */ }
-  return { ...DEFAULTS, ...user, helper: { ...DEFAULTS.helper, ...(user.helper || {}) } };
+  return { ...DEFAULTS, ...user, helper: { ...DEFAULTS.helper, ...(user.helper || {}) },
+    implement: { ...DEFAULTS.implement, ...(user.implement || {}), reviewers: { ...DEFAULTS.implement.reviewers, ...(user.implement?.reviewers || {}) } } };
 }

@@ -4,6 +4,7 @@ import { createRequire } from "node:module";
 import { join } from "node:path";
 import { getAgentDir, VERSION, ModelRuntime } from "@earendil-works/pi-coding-agent";
 import { configPath, loadConfig } from "./config.ts";
+import { providerStatuses } from "./providers.ts";
 
 export interface Check { name: string; status: "ok" | "warn" | "fail"; detail: string; }
 const ROOT = join(import.meta.dirname, "..");
@@ -49,6 +50,9 @@ export async function runDoctor(opts: { cwd: string; connect?: boolean; pi?: str
       c.push({ name: "helper model", status: m && avail ? "ok" : m ? "warn" : "fail", detail: m ? `${cfg.helper.model}${avail ? " (credentials available)" : " (known, but no credentials found)"}` : `${cfg.helper.model} is not a known model` });
     } catch (e: any) { c.push({ name: "helper model", status: "fail", detail: String(e.message) }); }
   }
+  for (const x of await providerStatuses()) c.push({ name: `model: ${x.label}`, status: x.ok ? "ok" : "warn", detail: `${x.detail}; ${x.role}` });
+  const bin = cfg.implement.e3dCodeBin;
+  c.push({ name: "e3d-code", status: which(bin) || existsSync(bin) ? "ok" : "warn", detail: which(bin) || existsSync(bin) ? `${bin} found` : `${bin} not found: loop_implement unavailable (set implement.e3dCodeBin)` });
   c.push({ name: "web search for private code", status: cfg.allowWebSearch ? "warn" : "ok", detail: cfg.allowWebSearch ? "allowWebSearch=true: Pilot debates may forward queries to the web" : "off (default); Loop does not enable Pilot web search" });
   try {
     const out = execFileSync("which", ["-a", "e3d"], { encoding: "utf8" }).trim().split("\n");

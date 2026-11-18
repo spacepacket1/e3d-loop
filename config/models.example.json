@@ -1,0 +1,11 @@
+{
+  "_comment": "Copy the provider into ~/.pi/agent/models.json. The dummy apiKey just makes the local model selectable; the MLX server ignores it. Model id must match GET /v1/models on your server.",
+  "providers": {
+    "qwen-local": {
+      "baseUrl": "http://127.0.0.1:5050/v1",
+      "api": "openai-completions",
+      "apiKey": "local",
+      "models": [ { "id": "mlx-community/Qwen2.5-7B-Instruct-4bit" } ]
+    }
+  }
+}
