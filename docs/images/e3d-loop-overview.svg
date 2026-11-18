@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 980" width="1200" height="980" role="img" aria-labelledby="t d" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title id="t">E3D Loop overview</title>
+  <desc id="d">A phased spec is routed to models by e3d-code and given one cited memory packet from Brain. Each phase is written, committed, checked and reviewed by a different model family, and any failure stops the run. The run is reported and an optional lesson is proposed to the Brain inbox. Nothing is merged.</desc>
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#8fa3c7"/></marker>
+    <marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#ffaa3c"/></marker>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d1326"/><stop offset="1" stop-color="#090d1a"/></linearGradient>
+  </defs>
+  <rect width="1200" height="980" rx="18" fill="url(#bg)"/>
+
+  <!-- title -->
+  <text x="600" y="62" text-anchor="middle" font-size="34" font-weight="700" fill="#f0f2f8">E3D Loop</text>
+  <text x="600" y="94" text-anchor="middle" font-size="19" fill="#ffaa3c">one memory · many models · a different model checks every step</text>
+  <text x="600" y="120" text-anchor="middle" font-size="14" fill="#8a94ad">an experiment: local-trusted execution, nothing is merged or pushed</text>
+
+  <!-- inputs -->
+  <g font-size="15">
+    <rect x="60" y="150" width="300" height="120" rx="12" fill="#121a33" stroke="#78c8ff" stroke-width="2"/>
+    <text x="210" y="182" text-anchor="middle" font-size="19" font-weight="700" fill="#78c8ff">1  Phased spec</text>
+    <text x="210" y="212" text-anchor="middle" fill="#cfd6e8">spec.md with</text>
+    <text x="210" y="234" text-anchor="middle" fill="#cfd6e8" font-family="Menlo, Consolas, monospace">## Phase N - Title</text>
+    <text x="210" y="256" text-anchor="middle" fill="#8a94ad" font-size="13">you or the agent writes it</text>
+
+    <rect x="450" y="150" width="300" height="120" rx="12" fill="#121a33" stroke="#78c8ff" stroke-width="2"/>
+    <text x="600" y="182" text-anchor="middle" font-size="19" font-weight="700" fill="#78c8ff">2  e3d-code routing</text>
+    <text x="600" y="212" text-anchor="middle" fill="#cfd6e8">picks a provider and model</text>
+    <text x="600" y="234" text-anchor="middle" fill="#cfd6e8">for each phase</text>
+    <text x="600" y="256" text-anchor="middle" fill="#8a94ad" font-size="13">e3d-code --list, shown before you approve</text>
+
+    <rect x="840" y="150" width="300" height="120" rx="12" fill="#121a33" stroke="#6fcf97" stroke-width="2"/>
+    <text x="990" y="182" text-anchor="middle" font-size="19" font-weight="700" fill="#6fcf97">3  E3D Brain</text>
+    <text x="990" y="212" text-anchor="middle" fill="#cfd6e8">one packet of cited notes</text>
+    <text x="990" y="234" text-anchor="middle" fill="#cfd6e8" font-family="Menlo, Consolas, monospace" font-size="14">note:&lt;id&gt;@&lt;rev&gt;</text>
+    <text x="990" y="256" text-anchor="middle" fill="#8a94ad" font-size="13">read-only, accepted notes, reference data</text>
+  </g>
+  <path d="M360 210 H450" stroke="#8fa3c7" stroke-width="2.5" fill="none" marker-end="url(#ar)"/>
+
+  <!-- gate -->
+  <path d="M600 270 V312" stroke="#8fa3c7" stroke-width="2.5" fill="none" marker-end="url(#ar)"/>
+  <path d="M990 270 V292 H640 V312" stroke="#6fcf97" stroke-width="2.5" fill="none" marker-end="url(#ar)"/>
+  <rect x="330" y="316" width="540" height="46" rx="23" fill="#2a1f0d" stroke="#ffaa3c" stroke-width="2"/>
+  <text x="600" y="345" text-anchor="middle" font-size="17" font-weight="700" fill="#ffaa3c">You choose: auto, or one phase at a time</text>
+
+  <!-- loop panel -->
+  <path d="M600 362 V392" stroke="#ffaa3c" stroke-width="2.5" fill="none" marker-end="url(#arA)"/>
+  <rect x="40" y="396" width="1120" height="318" rx="16" fill="#0f1730" stroke="#2c3a66" stroke-width="2" stroke-dasharray="8 6"/>
+  <text x="60" y="426" font-size="17" font-weight="700" fill="#f0f2f8">For each phase, in an isolated git worktree on a new loop/… branch</text>
+  <text x="1140" y="426" text-anchor="end" font-size="14" fill="#8a94ad">no sandbox: writers run unattended</text>
+
+  <g font-size="15">
+    <rect x="70" y="446" width="230" height="150" rx="12" fill="#161f3d" stroke="#ffaa3c" stroke-width="2"/>
+    <text x="185" y="476" text-anchor="middle" font-size="18" font-weight="700" fill="#ffaa3c">A  Writer</text>
+    <text x="185" y="504" text-anchor="middle" fill="#cfd6e8">Claude or Codex</text>
+    <text x="185" y="526" text-anchor="middle" fill="#cfd6e8">via e3d-code</text>
+    <text x="185" y="554" text-anchor="middle" fill="#6fcf97" font-size="13.5">reads the memory packet</text>
+    <text x="185" y="574" text-anchor="middle" fill="#8a94ad" font-size="13">writes the code</text>
+
+    <rect x="345" y="446" width="200" height="150" rx="12" fill="#161f3d" stroke="#78c8ff" stroke-width="2"/>
+    <text x="445" y="476" text-anchor="middle" font-size="18" font-weight="700" fill="#78c8ff">B  Commit</text>
+    <text x="445" y="504" text-anchor="middle" fill="#cfd6e8">one commit per</text>
+    <text x="445" y="526" text-anchor="middle" fill="#cfd6e8">phase, so it can be</text>
+    <text x="445" y="548" text-anchor="middle" fill="#cfd6e8">diffed or reverted</text>
+    <text x="445" y="574" text-anchor="middle" fill="#8a94ad" font-size="13">memory packet never committed</text>
+
+    <rect x="590" y="446" width="230" height="150" rx="12" fill="#161f3d" stroke="#78c8ff" stroke-width="2"/>
+    <text x="705" y="476" text-anchor="middle" font-size="18" font-weight="700" fill="#78c8ff">C  Check</text>
+    <text x="705" y="504" text-anchor="middle" fill="#cfd6e8">your command runs</text>
+    <text x="705" y="526" text-anchor="middle" fill="#cfd6e8" font-family="Menlo, Consolas, monospace" font-size="14">npm test</text>
+    <text x="705" y="554" text-anchor="middle" fill="#cfd6e8">exit code is observed,</text>
+    <text x="705" y="574" text-anchor="middle" fill="#cfd6e8">not claimed</text>
+
+    <rect x="865" y="446" width="265" height="150" rx="12" fill="#161f3d" stroke="#bf8cff" stroke-width="2"/>
+    <text x="997" y="476" text-anchor="middle" font-size="18" font-weight="700" fill="#bf8cff">D  Independent review</text>
+    <text x="997" y="504" text-anchor="middle" fill="#cfd6e8">a different model family</text>
+    <text x="997" y="526" text-anchor="middle" fill="#6fcf97" font-size="13.5">reads the same memory packet</text>
+    <text x="997" y="552" text-anchor="middle" fill="#cfd6e8">findings are claims; each</text>
+    <text x="997" y="572" text-anchor="middle" fill="#cfd6e8">quoted line is verified</text>
+  </g>
+  <g stroke="#8fa3c7" stroke-width="2.5" fill="none" marker-end="url(#ar)">
+    <path d="M300 521 H345"/><path d="M545 521 H590"/><path d="M820 521 H865"/>
+  </g>
+  <!-- next phase loop-back -->
+  <path d="M997 596 V636 H185 V600" stroke="#ffaa3c" stroke-width="2.5" fill="none" marker-end="url(#arA)"/>
+  <text x="591" y="630" text-anchor="middle" font-size="14" fill="#ffaa3c" font-weight="700">passed: next phase</text>
+  <text x="600" y="672" text-anchor="middle" font-size="14.5" fill="#ff8a7a" font-weight="700">STOPS on:  failed run · phase changed no files · failed check · review could not run · confirmed high-severity finding</text>
+  <text x="600" y="696" text-anchor="middle" font-size="13" fill="#8a94ad">a reviewer that cannot return structured findings also stops the run: Loop never continues without a review</text>
+
+  <!-- models -->
+  <rect x="40" y="734" width="1120" height="86" rx="14" fill="#10172e" stroke="#2c3a66" stroke-width="1.5"/>
+  <g font-size="14.5">
+    <text x="62" y="762" font-weight="700" fill="#ffaa3c">Writes code (via e3d-code)</text>
+    <text x="62" y="786" fill="#cfd6e8">Claude · OpenAI (Codex)</text>
+    <text x="62" y="806" fill="#8a94ad" font-size="12.5">Gemini, Grok, Qwen, Devin: no writer adapter yet</text>
+    <text x="440" y="762" font-weight="700" fill="#bf8cff">Reviews (config: implement.reviewers)</text>
+    <text x="440" y="786" fill="#cfd6e8">Claude · OpenAI · Gemini · Grok</text>
+    <text x="440" y="806" fill="#8a94ad" font-size="12.5">local Qwen 7B tried: did not follow the format, run stopped</text>
+    <text x="860" y="762" font-weight="700" fill="#78c8ff">Default pairing</text>
+    <text x="860" y="786" fill="#cfd6e8">Claude writes → OpenAI reviews</text>
+    <text x="860" y="806" fill="#cfd6e8">Codex writes → Claude reviews</text>
+  </g>
+
+  <!-- outputs -->
+  <path d="M300 820 V846" stroke="#8fa3c7" stroke-width="2.5" fill="none" marker-end="url(#ar)"/>
+  <path d="M900 820 V846" stroke="#8fa3c7" stroke-width="2.5" fill="none" marker-end="url(#ar)"/>
+  <g font-size="14.5">
+    <rect x="60" y="850" width="470" height="84" rx="12" fill="#121a33" stroke="#78c8ff" stroke-width="2"/>
+    <text x="295" y="878" text-anchor="middle" font-size="17" font-weight="700" fill="#78c8ff">Run report + a branch to review</text>
+    <text x="295" y="902" text-anchor="middle" fill="#cfd6e8">who wrote and reviewed each phase · check exit codes</text>
+    <text x="295" y="922" text-anchor="middle" fill="#cfd6e8">which notes were provided · nothing merged or pushed</text>
+
+    <rect x="670" y="850" width="470" height="84" rx="12" fill="#121a33" stroke="#6fcf97" stroke-width="2"/>
+    <text x="905" y="878" text-anchor="middle" font-size="17" font-weight="700" fill="#6fcf97">Optional lesson → Brain inbox</text>
+    <text x="905" y="902" text-anchor="middle" fill="#cfd6e8">a proposal you confirm, attributed to each model</text>
+    <text x="905" y="922" text-anchor="middle" fill="#cfd6e8">never curated memory until you accept it</text>
+  </g>
+  <text x="600" y="962" text-anchor="middle" font-size="13" fill="#8a94ad">Notes are provided, not proven used · reviewer findings are claims, not results · benefit versus one model is not yet measured</text>
+</svg>

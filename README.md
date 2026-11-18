@@ -4,6 +4,8 @@
 
 Loop is **not a fork of Pi**. It is a Pi package (one extension, one skill) plus a thin launcher. You get the full, unmodified Pi experience (pinned to 1.5.0), and Loop adds the E3D parts on top. If E3D services are unavailable, Pi still works as a normal single-model agent.
 
+<p align="center"><img src="docs/images/e3d-loop-overview.svg" alt="E3D Loop overview: a phased spec is routed to models by e3d-code and given one cited Brain memory packet; each phase is written, committed, checked and reviewed by a different model family, any failure stops the run, and the result is a report and a branch to review, plus an optional lesson proposed to the Brain inbox." width="900"></p>
+
 Docs: [spec](docs/e3d-loop-spec.md) (the roadmap, far larger than what is built) · [architecture](docs/architecture.md) · [first live demo](docs/demo-2026-11-08.md).
 
 ## The vision
@@ -153,7 +155,7 @@ skills/e3d-loop/       when to use Brain, Pilot and the helper
 src/                   implement (phased runs), brain (shared memory), mcp-client, providers,
                        helper, snapshot, evidence, doctor, config
 config/                example MCP, models, Loop and launcher config (no secrets)
-docs/                  spec, architecture, demo record
+docs/                  spec, architecture, demo record, images/ (README infographic)
 tests/                 offline: launcher-vs-Pi compatibility, safety logic, phased runs, Brain
 ```
 
