@@ -1,7 +1,8 @@
 import { execFileSync, spawn } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, readFileSync, realpathSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve, isAbsolute, relative } from "node:path";
 import { familyOf } from "./providers.ts";
+import { cite, type BrainContext } from "./brain.ts";
 import { repoKey, saveArtifact } from "./evidence.ts";
 
 /** One phase as reported by `e3d-code <spec> --list`: the provider and model e3d-code itself would use. */
@@ -77,6 +78,8 @@ export function readManifest(dir: string, phase: number): ManifestRow | null {
 export type PhaseStatus = "passed" | "runner_failed" | "no_changes" | "check_failed" | "review_blocked" | "review_unavailable" | "skipped";
 export interface PhaseRecord {
   phase: number; title: string; planned: { provider: string; model: string }; actual: { provider: string; model: string } | null;
+  /** Brain citations handed to the writer (as a file it was told to read) and to the reviewer (in its prompt). Provided, not necessarily used. */
+  memory: { writerGot: string[]; reviewerGot: string[] };
   status: PhaseStatus; runnerExit: number | null; runnerTail: string; commit: string | null; filesChanged: string[];
   check: { command: string; exit: number | null; tail: string; timedOut: boolean } | null;
   review: { model: string; independentOfWriter: boolean; status: string; findings: number; blocking: number; artifactPath?: string; summary: string } | null;
@@ -85,12 +88,15 @@ export interface PhaseRecord {
 export type RunMode = "auto" | "step";
 export interface ImplementRequest {
   cwd: string; specPath: string; mode: RunMode; phases?: number[]; checkCommand?: string; provider?: "claude" | "codex"; autoRoute: boolean; taskId: string;
+  /** Read-only shared memory from Brain; given to every writer and reviewer. */
+  brain?: BrainContext | null;
 }
+export const CONTEXT_FILE = ".loop-context/brain.md";
 export interface Deps {
   /** Pause point in step mode. Returns false to stop. */
   confirmPhase: (p: PlannedPhase) => Promise<boolean>;
   /** Independent review of a phase diff. Throw to signal the review could not run. */
-  review: (a: { worktreeDir: string; phase: PlannedPhase; writerFamily: string; diff: string; files: string[] }) => Promise<NonNullable<PhaseRecord["review"]>>;
+  review: (a: { worktreeDir: string; phase: PlannedPhase; writerFamily: string; diff: string; files: string[]; memory: string }) => Promise<NonNullable<PhaseRecord["review"]>>;
   progress?: (msg: string) => void;
   signal?: AbortSignal;
 }
@@ -99,6 +105,7 @@ export interface ImplementConfig { e3dCodeBin: string; phaseTimeoutSec: number; 
 
 const tail = (s: string, n = 1500) => (s.length > n ? "…" + s.slice(-n) : s).trim();
 const flags = (req: ImplementRequest) => [...(req.provider ? ["--provider", req.provider] : []), ...(req.autoRoute ? ["--auto-route"] : [])];
+const runFlags = (req: ImplementRequest) => [...flags(req), ...(req.brain?.markdown ? ["--read", CONTEXT_FILE] : [])];
 
 /** Read-only: what e3d-code would run for each phase. */
 export async function planRun(req: Pick<ImplementRequest, "cwd" | "specPath" | "provider" | "autoRoute">, cfg: ImplementConfig): Promise<{ phases: PlannedPhase[]; raw: string }> {
@@ -109,7 +116,7 @@ export async function planRun(req: Pick<ImplementRequest, "cwd" | "specPath" | "
   return { phases, raw: r.stdout };
 }
 
-export interface RunResult { status: "completed" | "stopped" | "paused" | "cancelled"; reason: string; worktree: Worktree; phases: PhaseRecord[]; artifactPath?: string; plan: PlannedPhase[]; }
+export interface RunResult { status: "completed" | "stopped" | "paused" | "cancelled"; reason: string; worktree: Worktree; phases: PhaseRecord[]; artifactPath?: string; plan: PlannedPhase[]; brain: { query: string; citations: string[]; recallIds: string[] } | null; }
 
 /** Run phases one at a time through e3d-code in an isolated worktree. Each phase is committed, checked, and reviewed by a different family before the next starts. */
 export async function runImplementation(req: ImplementRequest, cfg: ImplementConfig, stateDir: string, deps: Deps): Promise<RunResult> {
@@ -119,11 +126,14 @@ export async function runImplementation(req: ImplementRequest, cfg: ImplementCon
   // Commit the staged spec on its own so it never appears in a phase's diff or hides a no-change phase.
   git(wt.dir, "add", "--", spec);
   if (git(wt.dir, "diff", "--cached", "--name-only").trim()) git(wt.dir, "-c", "user.name=e3d-loop", "-c", "user.email=loop@localhost", "commit", "-q", "-m", "loop: stage spec");
+  const memCites = req.brain?.notes.map(cite) ?? [];
+  // The memory file is untracked and kept out of every phase commit; e3d-code is told to read it, and the reviewer gets the same text.
+  if (req.brain?.markdown) { mkdirSync(join(wt.dir, ".loop-context"), { recursive: true }); writeFileSync(join(wt.dir, CONTEXT_FILE), req.brain.markdown); }
   const { phases: all } = await planRun({ cwd: wt.dir, specPath: spec, provider: req.provider, autoRoute: req.autoRoute }, cfg);
   const todo = req.phases?.length ? all.filter((p) => req.phases!.includes(p.phase)) : all;
   const out: PhaseRecord[] = [];
   const finish = (status: RunResult["status"], reason: string): RunResult => {
-    const res: RunResult = { status, reason, worktree: wt, phases: out, plan: all };
+    const res: RunResult = { status, reason, worktree: wt, phases: out, plan: all, brain: req.brain ? { query: req.brain.query, citations: memCites, recallIds: req.brain.recallIds } : null };
     res.artifactPath = saveArtifact(stateDir, repoKey(wt.repoRoot), "impl-" + req.taskId, { schemaVersion: 1, taskId: req.taskId, mode: req.mode, spec, checkCommand: req.checkCommand ?? null, ...res });
     return res;
   };
@@ -133,17 +143,17 @@ export async function runImplementation(req: ImplementRequest, cfg: ImplementCon
     if (deps.signal?.aborted) return finish("cancelled", "cancelled by user");
     if (req.mode === "step" && !(await deps.confirmPhase(p))) return finish("paused", `stopped before phase ${p.phase} at your request`);
     say(`phase ${p.phase}/${all[all.length - 1].phase}: ${p.title} (${p.provider}/${p.model})`);
-    const rec: PhaseRecord = { phase: p.phase, title: p.title, planned: { provider: p.provider, model: p.model }, actual: null, status: "passed", runnerExit: null, runnerTail: "", commit: null, filesChanged: [], check: null, review: null };
+    const rec: PhaseRecord = { phase: p.phase, title: p.title, planned: { provider: p.provider, model: p.model }, actual: null, memory: { writerGot: memCites, reviewerGot: [] }, status: "passed", runnerExit: null, runnerTail: "", commit: null, filesChanged: [], check: null, review: null };
     out.push(rec);
 
-    const r = await run(cfg.e3dCodeBin, [spec, String(p.phase), ...flags(req)], { cwd: wt.dir, timeoutSec: cfg.phaseTimeoutSec });
+    const r = await run(cfg.e3dCodeBin, [spec, String(p.phase), ...runFlags(req)], { cwd: wt.dir, timeoutSec: cfg.phaseTimeoutSec });
     rec.runnerExit = r.code; rec.runnerTail = tail(r.stdout + "\n" + r.stderr);
     const mf = readManifest(wt.dir, p.phase);
     if (mf) rec.actual = { provider: mf.provider, model: mf.model };
     if (r.code !== 0) { rec.status = "runner_failed"; return finish("stopped", `phase ${p.phase}: e3d-code exited ${r.code}${r.timedOut ? " (timed out)" : ""}`); }
 
     // Commit this phase alone so it can be diffed, reviewed and reverted. e3d-code's own state dir is not part of the work.
-    git(wt.dir, "add", "-A", "--", ".", ":!.e3d-code", ":!.spec2code");
+    git(wt.dir, "add", "-A", "--", ".", ":!.e3d-code", ":!.spec2code", ":!.loop-context");
     const staged = git(wt.dir, "diff", "--cached", "--name-only").split("\n").filter(Boolean);
     // A phase that exits 0 but changes nothing counts as a failure: e3d-code can report success when a tool call was silently denied.
     if (!staged.length) { rec.status = "no_changes"; return finish("stopped", `phase ${p.phase} exited 0 but changed no files`); }
@@ -161,7 +171,8 @@ export async function runImplementation(req: ImplementRequest, cfg: ImplementCon
     const diff = git(wt.dir, "show", "--format=", "--patch", "HEAD").slice(0, cfg.reviewMaxDiffChars);
     say(`phase ${p.phase}: independent review`);
     try {
-      rec.review = await deps.review({ worktreeDir: wt.dir, phase: p, writerFamily, diff, files: staged });
+      rec.review = await deps.review({ worktreeDir: wt.dir, phase: p, writerFamily, diff, files: staged, memory: req.brain?.markdown ?? "" });
+      rec.memory.reviewerGot = memCites;
     } catch (e: any) { rec.status = "review_unavailable"; return finish("stopped", `phase ${p.phase}: review could not run (${String(e?.message ?? e).slice(0, 200)}); not continuing without one`); }
     if (rec.review.blocking > 0) { rec.status = "review_blocked"; return finish("stopped", `phase ${p.phase}: reviewer raised ${rec.review.blocking} confirmed high-severity finding(s)`); }
     rec.status = "passed";
@@ -177,6 +188,7 @@ export function formatRun(r: RunResult): string {
     if (p.check) L.push(`  check \`${p.check.command}\` -> exit ${p.check.exit}`);
     if (p.review) L.push(`  review by ${p.review.model} (${p.review.independentOfWriter ? "different family from writer" : "NOT independent of writer"}): ${p.review.status}, ${p.review.findings} finding(s), ${p.review.blocking} blocking. ${p.review.summary.slice(0, 200)}`);
   }
+  if (r.brain) L.push("", `Brain memory provided to writers and reviewers: ${r.brain.citations.join(", ") || "none found"} (query: ${r.brain.query}). Provided, not proven used.`);
   const notRun = r.plan.filter((x) => !r.phases.some((p) => p.phase === x.phase)).map((x) => x.phase);
   if (notRun.length) L.push("", `Not run: phase(s) ${notRun.join(", ")}.`);
   L.push("", "Review claims are the reviewer's, with quotes checked against the code; checks are only as good as the command you gave. Artifact: " + r.artifactPath);
