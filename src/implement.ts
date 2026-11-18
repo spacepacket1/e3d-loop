@@ -116,7 +116,7 @@ export async function planRun(req: Pick<ImplementRequest, "cwd" | "specPath" | "
   return { phases, raw: r.stdout };
 }
 
-export interface RunResult { status: "completed" | "stopped" | "paused" | "cancelled"; reason: string; worktree: Worktree; phases: PhaseRecord[]; artifactPath?: string; plan: PlannedPhase[]; brain: { query: string; citations: string[]; recallIds: string[] } | null; }
+export interface RunResult { status: "completed" | "stopped" | "paused" | "cancelled"; reason: string; worktree: Worktree; phases: PhaseRecord[]; artifactPath?: string; plan: PlannedPhase[]; checkCommand: string | null; brain: { query: string; citations: string[]; recallIds: string[] } | null; }
 
 /** Run phases one at a time through e3d-code in an isolated worktree. Each phase is committed, checked, and reviewed by a different family before the next starts. */
 export async function runImplementation(req: ImplementRequest, cfg: ImplementConfig, stateDir: string, deps: Deps): Promise<RunResult> {
@@ -133,7 +133,7 @@ export async function runImplementation(req: ImplementRequest, cfg: ImplementCon
   const todo = req.phases?.length ? all.filter((p) => req.phases!.includes(p.phase)) : all;
   const out: PhaseRecord[] = [];
   const finish = (status: RunResult["status"], reason: string): RunResult => {
-    const res: RunResult = { status, reason, worktree: wt, phases: out, plan: all, brain: req.brain ? { query: req.brain.query, citations: memCites, recallIds: req.brain.recallIds } : null };
+    const res: RunResult = { status, reason, worktree: wt, phases: out, plan: all, checkCommand: req.checkCommand ?? null, brain: req.brain ? { query: req.brain.query, citations: memCites, recallIds: req.brain.recallIds } : null };
     res.artifactPath = saveArtifact(stateDir, repoKey(wt.repoRoot), "impl-" + req.taskId, { schemaVersion: 1, taskId: req.taskId, mode: req.mode, spec, checkCommand: req.checkCommand ?? null, ...res });
     return res;
   };
@@ -177,11 +177,12 @@ export async function runImplementation(req: ImplementRequest, cfg: ImplementCon
     if (rec.review.blocking > 0) { rec.status = "review_blocked"; return finish("stopped", `phase ${p.phase}: reviewer raised ${rec.review.blocking} confirmed high-severity finding(s)`); }
     rec.status = "passed";
   }
-  return finish("completed", `${todo.length} phase(s) passed their checks and review`);
+  return finish("completed", req.checkCommand ? `${todo.length} phase(s) passed your check and review` : `${todo.length} phase(s) finished and were reviewed. No check command was given, so nothing was run to verify the code`);
 }
 
 export function formatRun(r: RunResult): string {
   const L = [`## E3D Loop implementation: ${r.status.toUpperCase()}`, r.reason, `Worktree: ${r.worktree.dir} (branch ${r.worktree.branch}, base ${r.worktree.baseRevision.slice(0, 10)}). Nothing was merged or pushed; your working tree is untouched.`, ""];
+  if (!r.checkCommand) L.push("**No check command was given: nothing was run to verify this code.** \"passed\" below means the writer finished and the review raised nothing blocking.", "");
   for (const p of r.phases) {
     const used = p.actual ? `${p.actual.provider}/${p.actual.model}` : `${p.planned.provider}/${p.planned.model} (planned; runner recorded nothing)`;
     L.push(`- Phase ${p.phase} ${p.title}: **${p.status}**. Writer ${used}. Files: ${p.filesChanged.join(", ") || "none"}.`);

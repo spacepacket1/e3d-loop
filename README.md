@@ -6,7 +6,7 @@ Loop is **not a fork of Pi**. It is a Pi package (one extension, one skill) plus
 
 <p align="center"><img src="docs/images/e3d-loop-overview.svg" alt="E3D Loop overview: a phased spec is routed to models by e3d-code and given one cited Brain memory packet; each phase is written, committed, checked and reviewed by a different model family, any failure stops the run, and the result is a report and a branch to review, plus an optional lesson proposed to the Brain inbox." width="900"></p>
 
-Docs: [spec](docs/e3d-loop-spec.md) (the roadmap, far larger than what is built) · [architecture](docs/architecture.md) · [first live demo](docs/demo-2026-11-08.md).
+Docs: [spec](docs/e3d-loop-spec.md) (the roadmap, far larger than what is built) · [architecture](docs/architecture.md) · [first live demo](docs/demo-2026-11-08.md) · [first interactive `loop_implement` run](docs/demo-2026-11-18.md).
 
 ## The vision
 
