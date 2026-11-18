@@ -157,3 +157,19 @@ test("manifest readback returns the runner's own record, ignoring dry runs", () 
   writeFileSync(join(d, ".e3d-code/manifest.tsv"), "t\ts\t2\tT\tclaude\tsonnet\tm\t1\t0\nt\ts\t2\tT\tcodex\tgpt\tm\t0\t0\n");
   assert.equal(readManifest(d, 2).provider, "codex"); assert.equal(readManifest(d, 9), null);
 });
+
+test("sse shim re-emits a plain JSON completion as a stream and flattens list-shaped content", async () => {
+  const { toSse } = await import("../bin/sse-shim.mjs");
+  const sse = toSse({ id: "x", model: "m", choices: [{ finish_reason: "stop", message: { content: [{ type: "text", text: "po" }, { type: "text", text: "ng" }] } }], usage: { total_tokens: 3 } });
+  const events = sse.split("\n\n").filter(Boolean);
+  assert.equal(events.at(-1), "data: [DONE]");
+  const first = JSON.parse(events[0].slice(6)); assert.equal(first.choices[0].delta.content, "pong");
+  const last = JSON.parse(events[1].slice(6)); assert.equal(last.choices[0].finish_reason, "stop"); assert.equal(last.usage.total_tokens, 3);
+});
+
+test("default reviewers: every code-writing family has a reviewer from a different family", async () => {
+  const { DEFAULTS } = await import("../src/config.ts");
+  for (const p of PROVIDERS.filter((x) => x.codeRunner)) {
+    const rev = DEFAULTS.implement.reviewers[p.id]; assert.ok(rev, `reviewer for ${p.id}`); assert.notEqual(familyOf(rev), p.id);
+  }
+});

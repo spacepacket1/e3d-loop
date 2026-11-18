@@ -23,7 +23,7 @@ export interface LoopConfig {
     /** Per-phase wall clock for e3d-code, and for the check command. */
     phaseTimeoutSec: number;
     checkTimeoutSec: number;
-    /** Reviewer per writer family ("claude" = Claude CLI, "codex" = Codex CLI), as "provider/modelId". A different family reviews each phase. */
+    /** Reviewer per writer family ("claude", "openai", ...), as "provider/modelId". A different family should review each phase. */
     reviewers: Record<string, string>;
     reviewMaxDiffChars: number;
   };
@@ -34,7 +34,7 @@ export const DEFAULTS: LoopConfig = {
   allowWebSearch: false,
   implement: {
     e3dCodeBin: "e3d-code", phaseTimeoutSec: 1800, checkTimeoutSec: 600, reviewMaxDiffChars: 24000,
-    reviewers: { claude: "openai/gpt-5.5", codex: "anthropic/claude-sonnet-5-5" },
+    reviewers: { claude: "openai/gpt-5.5", openai: "anthropic/claude-sonnet-5-5" },
   },
 };
 
