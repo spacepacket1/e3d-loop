@@ -1,12 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 980" width="1200" height="980" role="img" aria-labelledby="t d" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1130" width="1200" height="1130" role="img" aria-labelledby="t d" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
   <title id="t">E3D Loop overview</title>
-  <desc id="d">A phased spec is routed to models by e3d-code and given one cited memory packet from Brain. Each phase is written, committed, checked and reviewed by a different model family, and any failure stops the run. The run is reported and an optional lesson is proposed to the Brain inbox. Nothing is merged.</desc>
+  <desc id="d">A phased spec is routed to models by e3d-code and given one cited memory packet from Brain. Six model families are supported in different roles: Claude and OpenAI write and review, Gemini and Grok review, local Qwen reviews poorly, and Devin is detected only. Each phase is written, committed, checked and reviewed by a different model family, and any failure stops the run. The run is reported and an optional lesson is proposed to the Brain inbox. Nothing is merged.</desc>
   <defs>
     <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#8fa3c7"/></marker>
     <marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#ffaa3c"/></marker>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d1326"/><stop offset="1" stop-color="#090d1a"/></linearGradient>
   </defs>
-  <rect width="1200" height="980" rx="18" fill="url(#bg)"/>
+  <rect width="1200" height="1130" rx="18" fill="url(#bg)"/>
 
   <!-- title -->
   <text x="600" y="62" text-anchor="middle" font-size="34" font-weight="700" fill="#f0f2f8">E3D Loop</text>
@@ -86,32 +86,61 @@
   <text x="600" y="696" text-anchor="middle" font-size="13" fill="#8a94ad">a reviewer that cannot return structured findings also stops the run: Loop never continues without a review</text>
 
   <!-- models -->
-  <rect x="40" y="734" width="1120" height="86" rx="14" fill="#10172e" stroke="#2c3a66" stroke-width="1.5"/>
-  <g font-size="14.5">
-    <text x="62" y="762" font-weight="700" fill="#ffaa3c">Writes code (via e3d-code)</text>
-    <text x="62" y="786" fill="#cfd6e8">Claude · OpenAI (Codex)</text>
-    <text x="62" y="806" fill="#8a94ad" font-size="12.5">Gemini, Grok, Qwen, Devin: no writer adapter yet</text>
-    <text x="440" y="762" font-weight="700" fill="#bf8cff">Reviews (config: implement.reviewers)</text>
-    <text x="440" y="786" fill="#cfd6e8">Claude · OpenAI · Gemini · Grok</text>
-    <text x="440" y="806" fill="#8a94ad" font-size="12.5">local Qwen 7B tried: did not follow the format, run stopped</text>
-    <text x="860" y="762" font-weight="700" fill="#78c8ff">Default pairing</text>
-    <text x="860" y="786" fill="#cfd6e8">Claude writes → OpenAI reviews</text>
-    <text x="860" y="806" fill="#cfd6e8">Codex writes → Claude reviews</text>
+  <rect x="40" y="734" width="1120" height="232" rx="14" fill="#10172e" stroke="#2c3a66" stroke-width="1.5"/>
+  <text x="600" y="764" text-anchor="middle" font-size="19" font-weight="700" fill="#f0f2f8">Six model families, one shared memory</text>
+  <g>
+    <rect x="58" y="788" width="166" height="128" rx="12" fill="#161f3d" stroke="#2c3a66" stroke-width="1.5"/>
+    <circle cx="78" cy="812" r="7" fill="#e8935f"/>
+    <text x="92" y="817" font-size="16" font-weight="700" fill="#f0f2f8">Claude</text>
+    <text x="72" y="842" font-size="12" fill="#8a94ad">Pi + claude CLI</text>
+    <rect x="69" y="854" width="143" height="22" rx="11" fill="#16341f" stroke="#6fcf97" stroke-width="1.5"/><text x="140.5" y="869.5" text-anchor="middle" font-size="12.5" font-weight="600" fill="#9be3b5">✓ writes code</text>
+    <rect x="69" y="882" width="143" height="22" rx="11" fill="#16341f" stroke="#6fcf97" stroke-width="1.5"/><text x="140.5" y="897.5" text-anchor="middle" font-size="12.5" font-weight="600" fill="#9be3b5">✓ reviews</text>
+    <rect x="240" y="788" width="166" height="128" rx="12" fill="#161f3d" stroke="#2c3a66" stroke-width="1.5"/>
+    <circle cx="260" cy="812" r="7" fill="#6fcf97"/>
+    <text x="274" y="817" font-size="16" font-weight="700" fill="#f0f2f8">OpenAI</text>
+    <text x="254" y="842" font-size="12" fill="#8a94ad">Pi + codex CLI</text>
+    <rect x="251" y="854" width="143" height="22" rx="11" fill="#16341f" stroke="#6fcf97" stroke-width="1.5"/><text x="322.5" y="869.5" text-anchor="middle" font-size="12.5" font-weight="600" fill="#9be3b5">✓ writes code</text>
+    <rect x="251" y="882" width="143" height="22" rx="11" fill="#16341f" stroke="#6fcf97" stroke-width="1.5"/><text x="322.5" y="897.5" text-anchor="middle" font-size="12.5" font-weight="600" fill="#9be3b5">✓ reviews</text>
+    <rect x="422" y="788" width="166" height="128" rx="12" fill="#161f3d" stroke="#2c3a66" stroke-width="1.5"/>
+    <circle cx="442" cy="812" r="7" fill="#78c8ff"/>
+    <text x="456" y="817" font-size="16" font-weight="700" fill="#f0f2f8">Gemini</text>
+    <text x="436" y="842" font-size="12" fill="#8a94ad">Pi (google)</text>
+    <rect x="433" y="854" width="143" height="22" rx="11" fill="#161b2e" stroke="#3a4670" stroke-width="1.5"/><text x="504.5" y="869.5" text-anchor="middle" font-size="12.5" font-weight="600" fill="#7d89a8">– no writer yet</text>
+    <rect x="433" y="882" width="143" height="22" rx="11" fill="#16341f" stroke="#6fcf97" stroke-width="1.5"/><text x="504.5" y="897.5" text-anchor="middle" font-size="12.5" font-weight="600" fill="#9be3b5">✓ reviews</text>
+    <rect x="604" y="788" width="166" height="128" rx="12" fill="#161f3d" stroke="#2c3a66" stroke-width="1.5"/>
+    <circle cx="624" cy="812" r="7" fill="#bf8cff"/>
+    <text x="638" y="817" font-size="16" font-weight="700" fill="#f0f2f8">Grok</text>
+    <text x="618" y="842" font-size="12" fill="#8a94ad">Pi (xai)</text>
+    <rect x="615" y="854" width="143" height="22" rx="11" fill="#161b2e" stroke="#3a4670" stroke-width="1.5"/><text x="686.5" y="869.5" text-anchor="middle" font-size="12.5" font-weight="600" fill="#7d89a8">– no writer yet</text>
+    <rect x="615" y="882" width="143" height="22" rx="11" fill="#16341f" stroke="#6fcf97" stroke-width="1.5"/><text x="686.5" y="897.5" text-anchor="middle" font-size="12.5" font-weight="600" fill="#9be3b5">✓ reviews</text>
+    <rect x="786" y="788" width="166" height="128" rx="12" fill="#161f3d" stroke="#2c3a66" stroke-width="1.5"/>
+    <circle cx="806" cy="812" r="7" fill="#f2cf66"/>
+    <text x="820" y="817" font-size="16" font-weight="700" fill="#f0f2f8">Qwen (local)</text>
+    <text x="800" y="842" font-size="12" fill="#8a94ad">Pi + stream shim</text>
+    <rect x="797" y="854" width="143" height="22" rx="11" fill="#161b2e" stroke="#3a4670" stroke-width="1.5"/><text x="868.5" y="869.5" text-anchor="middle" font-size="12.5" font-weight="600" fill="#7d89a8">– no writer yet</text>
+    <rect x="797" y="882" width="143" height="22" rx="11" fill="#3a2e0d" stroke="#f2cf66" stroke-width="1.5"/><text x="868.5" y="897.5" text-anchor="middle" font-size="12.5" font-weight="600" fill="#f2cf66">~ 7B: weak reviewer</text>
+    <rect x="968" y="788" width="166" height="128" rx="12" fill="#161f3d" stroke="#2c3a66" stroke-width="1.5"/>
+    <circle cx="988" cy="812" r="7" fill="#8fa3c7"/>
+    <text x="1002" y="817" font-size="16" font-weight="700" fill="#f0f2f8">Devin</text>
+    <text x="982" y="842" font-size="12" fill="#8a94ad">devin CLI</text>
+    <rect x="979" y="854" width="143" height="22" rx="11" fill="#161b2e" stroke="#3a4670" stroke-width="1.5"/><text x="1050.5" y="869.5" text-anchor="middle" font-size="12.5" font-weight="600" fill="#7d89a8">– detected only</text>
+    <rect x="979" y="882" width="143" height="22" rx="11" fill="#161b2e" stroke="#3a4670" stroke-width="1.5"/><text x="1050.5" y="897.5" text-anchor="middle" font-size="12.5" font-weight="600" fill="#7d89a8">– not wired</text>
   </g>
+  <text x="600" y="944" text-anchor="middle" font-size="13.5" fill="#cfd6e8">Default pairing: Claude writes → OpenAI reviews · Codex writes → Claude reviews · choose reviewers with <tspan font-family="Menlo, Consolas, monospace" font-size="12.5">implement.reviewers</tspan></text>
 
   <!-- outputs -->
-  <path d="M300 820 V846" stroke="#8fa3c7" stroke-width="2.5" fill="none" marker-end="url(#ar)"/>
-  <path d="M900 820 V846" stroke="#8fa3c7" stroke-width="2.5" fill="none" marker-end="url(#ar)"/>
+  <path d="M300 966 V996" stroke="#8fa3c7" stroke-width="2.5" fill="none" marker-end="url(#ar)"/>
+  <path d="M900 966 V996" stroke="#8fa3c7" stroke-width="2.5" fill="none" marker-end="url(#ar)"/>
   <g font-size="14.5">
-    <rect x="60" y="850" width="470" height="84" rx="12" fill="#121a33" stroke="#78c8ff" stroke-width="2"/>
-    <text x="295" y="878" text-anchor="middle" font-size="17" font-weight="700" fill="#78c8ff">Run report + a branch to review</text>
-    <text x="295" y="902" text-anchor="middle" fill="#cfd6e8">who wrote and reviewed each phase · check exit codes</text>
-    <text x="295" y="922" text-anchor="middle" fill="#cfd6e8">which notes were provided · nothing merged or pushed</text>
+    <rect x="60" y="1000" width="470" height="84" rx="12" fill="#121a33" stroke="#78c8ff" stroke-width="2"/>
+    <text x="295" y="1028" text-anchor="middle" font-size="17" font-weight="700" fill="#78c8ff">Run report + a branch to review</text>
+    <text x="295" y="1052" text-anchor="middle" fill="#cfd6e8">who wrote and reviewed each phase · check exit codes</text>
+    <text x="295" y="1072" text-anchor="middle" fill="#cfd6e8">which notes were provided · nothing merged or pushed</text>
 
-    <rect x="670" y="850" width="470" height="84" rx="12" fill="#121a33" stroke="#6fcf97" stroke-width="2"/>
-    <text x="905" y="878" text-anchor="middle" font-size="17" font-weight="700" fill="#6fcf97">Optional lesson → Brain inbox</text>
-    <text x="905" y="902" text-anchor="middle" fill="#cfd6e8">a proposal you confirm, attributed to each model</text>
-    <text x="905" y="922" text-anchor="middle" fill="#cfd6e8">never curated memory until you accept it</text>
+    <rect x="670" y="1000" width="470" height="84" rx="12" fill="#121a33" stroke="#6fcf97" stroke-width="2"/>
+    <text x="905" y="1028" text-anchor="middle" font-size="17" font-weight="700" fill="#6fcf97">Optional lesson → Brain inbox</text>
+    <text x="905" y="1052" text-anchor="middle" fill="#cfd6e8">a proposal you confirm, attributed to each model</text>
+    <text x="905" y="1072" text-anchor="middle" fill="#cfd6e8">never curated memory until you accept it</text>
   </g>
-  <text x="600" y="962" text-anchor="middle" font-size="13" fill="#8a94ad">Notes are provided, not proven used · reviewer findings are claims, not results · benefit versus one model is not yet measured</text>
+  <text x="600" y="1112" text-anchor="middle" font-size="13" fill="#8a94ad">Notes are provided, not proven used · reviewer findings are claims, not results · benefit versus one model is not yet measured</text>
 </svg>
