@@ -75,6 +75,12 @@ Ask for an independent look ("get an independent review of `src/foo.ts`") and th
 
 The foreground prompt also tells the model when to search Brain, when to consult Pilot, and to report only test results it actually ran.
 
+## Implementing with e3d-code (`loop_implement`)
+
+Write a phased spec (`## Phase N - Title`), then ask the agent to implement it. `loop_implement action=plan` shows the provider and model e3d-code itself picks per phase (`--list`, with `--auto-route`). `action=run` asks you to choose **auto** or **one phase at a time**, creates an isolated git worktree on a new `loop/...` branch, and for each phase: runs `e3d-code <spec> <N>`, commits, runs your `check_command`, and has a different model family review the diff. It stops on the first failed run, no-change phase, failed check, unavailable review or confirmed high-severity finding. It never merges or pushes. e3d-code runs the writer unattended, so treat the worktree as untrusted-output; there is no sandbox. Non-interactive use needs `E3D_LOOP_ALLOW_UNATTENDED=1`.
+
+Writers via e3d-code: Claude and OpenAI (Codex) only. Gemini, Grok, Qwen (local) and Devin are not code writers yet. Gemini, Grok and Qwen can be helpers and reviewers through Pi (`implement.reviewers` in config); `e3d doctor` lists all six. Qwen needs `node bin/sse-shim.mjs` and the `qwen-local` provider from `config/models.example.json`. Devin is detected only; it is not wired in.
+
 ## Known gotchas
 
 - `e3d -p` waits forever if stdin stays open (for example under a script or CI). Use `e3d -p "..." </dev/null`.
