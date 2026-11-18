@@ -245,3 +245,15 @@ test("implementation shares Brain memory: writer told to read it, reviewer given
   assert.ok(!execFileSync("git", ["-C", r.worktree.dir, "ls-files"], { encoding: "utf8" }).includes(".loop-context"), "memory file never committed");
   assert.ok(!r.phases[0].filesChanged.some((f) => f.includes("loop-context")));
 });
+
+test("a run with no check command says nothing was verified, in both the reason and the report", async () => {
+  const { formatRun } = await import("../src/implement.ts");
+  const d = mkRepo(); const st = mkdtempSync(join(tmpdir(), "st-")); const bin = fakeCode(st);
+  const run = (checkCommand) => runImplementation({ cwd: d, specPath: "spec.md", mode: "auto", autoRoute: false, taskId: "nc" + Math.random().toString(16).slice(2, 6), checkCommand }, cfgFor(bin), st, { confirmPhase: async () => true, review: goodReview });
+  const none = await run(undefined);
+  assert.equal(none.status, "completed"); assert.equal(none.checkCommand, null);
+  assert.match(none.reason, /No check command was given/); assert.doesNotMatch(none.reason, /passed your check/);
+  assert.match(formatRun(none), /nothing was run to verify this code/);
+  const withCheck = await run("true");
+  assert.match(withCheck.reason, /passed your check/); assert.doesNotMatch(formatRun(withCheck), /nothing was run to verify/);
+});
