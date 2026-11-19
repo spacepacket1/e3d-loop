@@ -76,3 +76,28 @@ export async function captureLesson(cwd: string, lesson: { title: string; body: 
   if (!c) { const s = findMcpServer(/brain/i, cwd); if (!s) throw new Error("no Brain MCP server configured"); c = own = await new McpClient(s.spec).init(); }
   try { return await c.call("capture", { title: lesson.title, body: lesson.body, kind: "lesson", sources: lesson.sources }); } finally { own?.close(); }
 }
+
+const STOP = new Set("a an and are as at be but by can do does for from has have how if in into is it its must not of on one or so that the their then there these this to use used using via was we string src json npm install package config when which while will with without your you each both also than them they new add adds build builds create creates make makes just only phase phases spec file files code run runs should would could may might exporting export exports import after before first last same other more most such any all none no yes true false".split(" "));
+
+/** Derive Brain search terms from a spec: distinctive words (names, acronyms, `code` spans, camelCase) first, then frequent plain words; project title and phase titles included. Brain matches any term, so a short list of distinctive words beats a sentence of generic ones. */
+export function deriveBrainQuery(spec: string, phaseTitles: string[] = [], max = 12): string {
+  const score = new Map<string, number>(); const order: string[] = [];
+  const add = (raw: string, w: number) => {
+    const t = raw.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, ""); const k = t.toLowerCase();
+    if (t.length < 3 || STOP.has(k) || /^\d+$/.test(t) || /\.(json|ts|js|mjs|md|yml|yaml|toml)$/i.test(t) || t.includes("/")) return;
+    if (!score.has(k)) { score.set(k, 0); order.push(t); }
+    score.set(k, score.get(k)! + w);
+  };
+  const body = spec.replace(/```[\s\S]*?```/g, " ");
+  for (const m of body.matchAll(/`([A-Za-z][A-Za-z0-9_-]*)[^`\n]*`/g)) add(m[1], 2); // leading identifier of a code span
+  const plain = body.replace(/`[^`\n]*`/g, " ");
+  for (const m of plain.matchAll(/[A-Za-z][A-Za-z0-9-]*/g)) {
+    const w = m[0]; const before = plain.slice(0, m.index).trimEnd();
+    const sentenceStart = before === "" || /[.!?:#]$/.test(before) || /\n\s*$/.test(plain.slice(0, m.index));
+    const distinctive = /^[A-Z][A-Z0-9]+$/.test(w) || /[a-z][A-Z]/.test(w) || (/^[A-Z][a-z0-9]+$/.test(w) && !sentenceStart);
+    add(w, distinctive ? 3 : 1);
+  }
+  for (const t of phaseTitles) for (const w of t.split(/[^A-Za-z0-9]+/)) if (w) add(w, 1);
+  const title = spec.match(/^#\s+(.+)$/m)?.[1]; if (title) for (const w of title.split(/[^A-Za-z0-9]+/)) if (w) add(w, 2);
+  return order.map((t, i) => ({ t, s: score.get(t.toLowerCase())!, i })).sort((a, b) => b.s - a.s || a.i - b.i).slice(0, max).map((x) => x.t).join(" ");
+}

@@ -175,7 +175,7 @@ test("default reviewers: every code-writing family has a reviewer from a differe
 });
 
 // ---- Brain support ----
-import { parseBrainResult, parseSearch, parseRead, buildBrainContext, buildLesson, captureLesson } from "../src/brain.ts";
+import { parseBrainResult, parseSearch, parseRead, buildBrainContext, deriveBrainQuery, buildLesson, captureLesson } from "../src/brain.ts";
 import { McpClient } from "../src/mcp-client.ts";
 
 const NOTE = (id, rev, status) => ({ id, rev, status, provisional: false, path: `n/${id}.md`, citation: `note:${id}@${rev}`, excerpt: "x" });
@@ -256,4 +256,13 @@ test("a run with no check command says nothing was verified, in both the reason 
   assert.match(formatRun(none), /nothing was run to verify this code/);
   const withCheck = await run("true");
   assert.match(withCheck.reason, /passed your check/); assert.doesNotMatch(formatRun(withCheck), /nothing was run to verify/);
+});
+
+test("deriveBrainQuery picks distinctive spec terms, drops filler and file names, and is bounded", () => {
+  const spec = "# addrkit\n\nBuild a small E3D TypeScript library called `addrkit`. Follow the E3D SDK conventions. Do not run `npm install`.\n\n## Phase 1 - short addresses\nCreate `package.json` and `src/address.ts` exporting `shortAddress(addr: string): string`.\n```bash\nnpm test\n```";
+  const q = deriveBrainQuery(spec, ["short addresses", "address comparison"]); const w = q.split(" ");
+  for (const t of ["E3D", "TypeScript", "SDK", "addrkit", "shortAddress"]) assert.ok(w.includes(t), `${t} in: ${q}`);
+  for (const t of ["the", "Build", "package.json", "src/address.ts", "bash", "Phase"]) assert.ok(!w.includes(t), `${t} not in: ${q}`);
+  assert.ok(w.length <= 12); assert.equal(new Set(w.map((x) => x.toLowerCase())).size, w.length);
+  assert.equal(deriveBrainQuery("", []), ""); assert.equal(deriveBrainQuery("the and of", []), "");
 });
