@@ -65,7 +65,7 @@ optional: propose a lesson to the Brain inbox (you confirm)
 
 ## Status
 
-Verified: the launcher is transparent versus bare Pi (offline tests); snapshot and confinement logic; evidence checking; the bounds and recursion guard; 27 offline tests; and live `loop_implement` runs where Claude and Codex wrote phases, other models reviewed them, and the same Brain note reached every writer and reviewer.
+Verified: the launcher is transparent versus bare Pi (offline tests); snapshot and confinement logic; evidence checking; the bounds and recursion guard; offline tests; and live `loop_implement` runs where Claude and Codex wrote phases, other models reviewed them, and the same Brain note reached every writer and reviewer.
 
 Not verified or not built:
 
@@ -76,18 +76,66 @@ Not verified or not built:
 - **RPC and SDK parity** with Pi is not tested; the launcher passes flags through.
 - **Costs are real.** Helper and reviewer calls, e3d-code writers and Pilot debates spend model credits. Cost is Pi's catalog estimate unless the provider reports billed cost.
 
-## Quick start
+## Install and run (an AI agent can do all of it)
 
-Requires Node 22.19 or newer, and for `loop_implement` the [e3d-code](https://github.com/spacepacket1/e3d-code) runner on your `PATH` with the `claude` and/or `codex` CLIs installed.
+Most people will not install this by hand, and they should not have to. Point Claude Code, Codex or any coding agent at this repo and say:
+
+> Read README.md and CLAUDE.md in this repo. Install every part Loop needs by following "Agent install checklist", tell me which keys I must provide, then run `e3d doctor` and give me the command to start it.
+
+It is bring-your-own-keys: Loop ships no keys and the agent must never ask you to paste one into a file in a repo.
+
+### Agent install checklist
+
+Do these in order. Use https clones. Install under one parent directory, for example `~/e3d/`. Do not read, print or commit key files.
+
+1. **Prerequisites.** Node 22.19 or newer, git, and at least one of the `claude` or `codex` CLIs installed **and logged in** (they are the only code writers). Check with `node -v`, `claude --version`, `codex --version`.
+2. **Loop.**
+   ```sh
+   git clone https://github.com/spacepacket1/e3d-loop && cd e3d-loop
+   npm install        # may warn about install scripts for @google/genai and protobufjs: harmless
+   npm test           # offline, no model calls, no network; must pass
+   npm link           # optional: provides the `e3d` command (otherwise use `node <repo>/bin/e3d.mjs`)
+   ```
+3. **e3d-code (the phase runner).** It is a Bash script, so there is nothing to build:
+   ```sh
+   git clone https://github.com/spacepacket1/e3d-code
+   export PATH="$PWD/e3d-code/bin:$PATH"     # persist this in the shell profile, with the user's OK
+   e3d-code --version
+   ```
+4. **E3D Brain (shared memory; optional but it is the point).** Follow its [docs/SETUP.md](https://github.com/spacepacket1/e3d-brain/blob/main/docs/SETUP.md), which is the source of truth:
+   ```sh
+   git clone https://github.com/spacepacket1/e3d-brain && cd e3d-brain
+   npm ci --ignore-scripts && npm run build
+   node dist/src/cli/main.js init --vault ~/Brain --principal <your-name>
+   node dist/src/cli/main.js doctor --strict
+   ```
+   Then register it with Pi (Loop reads Pi's MCP config): copy the `futco-brain` entry from [config/mcp.example.json](config/mcp.example.json) into `~/.pi/agent/mcp.json`, and replace `~/e3d-brain` with the real absolute path and `${EBRAIN_CONFIG}` with the real path of the config `init` wrote (`~/.e3d-brain/config.json` by default). Brain needs notes in the vault to have anything to share; an empty vault gives the models nothing. Without Brain, runs continue and say so.
+5. **E3D Pilot (optional, not needed for `loop_implement`).** Multi-model debate: [spacepacket1/e3d-pilot](https://github.com/spacepacket1/e3d-pilot). Skip it unless the user asks.
+6. **Keys.** See "Credentials you need" below. Never write a key into the repo.
+7. **Verify.** Run `e3d doctor --connect` (`--connect` also runs `pi mcp list`, which tries to start the configured MCP servers). Report every line that is not `ok`. Do not run a live `loop_implement` (it spends credits) unless the user says so.
+8. **Hand over.** Give the user the exact command: `cd <their git repo> && e3d`, and the two requests under "Try `loop_implement`" below.
+
+### Credentials you need
+
+| For | You need | Notes |
+|---|---|---|
+| Claude writing code | `claude` CLI logged in, or `ANTHROPIC_API_KEY` | e3d-code sources `~/.config/e3d-pilot/anthropic-api-key` if `ANTHROPIC_API_KEY` is unset; override the path with `E3D_CODE_CLAUDE_API_KEY_FILE` |
+| OpenAI/Codex writing code | `codex` CLI logged in | |
+| The Pi session and reviewers | a provider credential for each reviewer family: `/login` inside `e3d`, or `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `XAI_API_KEY` ([Pi's provider docs](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/providers.md)) | |
+| Optional | Gemini and Grok keys (reviewers only), Pilot hosted login (spends credits), a local Qwen server | |
+
+**Minimum setup, and a trap.** The default reviewer for Claude-written code is `openai/gpt-5.5`, and for Codex-written code it is `anthropic/claude-sonnet-5-5`. If you only have Claude credentials, a run stops at the first review (Loop never continues without one), so also set a reviewer you do have in `implement.reviewers` (see Configure), for example Claude code reviewed by `google/gemini-3.5-flash`. This is by design: the reviewer must be a different family from the writer.
+
+To load keys from files at launch instead of your shell profile, copy [config/run.example.sh](config/run.example.sh), edit the paths, keep it outside the repo, and `chmod 700` it. Never commit keys.
+
+### Manual quick start (loop only)
 
 ```sh
-git clone git@github.com:spacepacket1/e3d-loop.git && cd e3d-loop
+git clone https://github.com/spacepacket1/e3d-loop && cd e3d-loop
 npm install
 npm link                     # optional: provides the `e3d` command (else: node bin/e3d.mjs)
 e3d doctor --connect         # Pi pin, MCP servers, the six model families, e3d-code, command conflicts
 ```
-
-Give Pi a model credential one of two ways: run `e3d` and type `/login`, or export a provider key in your environment as [Pi documents](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/providers.md). To load keys from files at launch instead of your shell profile, copy [config/run.example.sh](config/run.example.sh), edit the paths, keep it outside the repo, and `chmod 700` it. Never commit keys.
 
 Then run `e3d` in a git repo. It behaves like `pi`: all flags, `-p`, `--mode rpc`, `-c`, `-r`, `mcp`, `install` pass through.
 
@@ -159,7 +207,7 @@ docs/                  spec, architecture, demo record, images/ (README infograp
 tests/                 offline: launcher-vs-Pi compatibility, safety logic, phased runs, Brain
 ```
 
-`npm test` runs offline with no model calls (27 tests).
+`npm test` runs offline with no model calls (no model calls).
 
 ## Credits and license
 
