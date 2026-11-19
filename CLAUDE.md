@@ -2,6 +2,9 @@
 
 Guide for AI agents (and people) changing E3D Loop. For what Loop is and how to use it, read [README.md](README.md) first; the design is in [docs/architecture.md](docs/architecture.md), and [docs/e3d-loop-spec.md](docs/e3d-loop-spec.md) is a roadmap far larger than what is built.
 
+## If you were asked to install or run Loop
+Follow README.md "Install and run": the **Agent install checklist** covers Loop, e3d-code, Brain and the keys, and "Credentials you need" lists them. It is bring-your-own-keys: never read, print or write a key into a repo. Do not run a live `loop_implement` (it spends credits) unless the user says so.
+
 ## What this repo is
 A Pi package (one extension, one skill) plus a thin launcher, not a fork of Pi. Pi is pinned to an exact version. Loop adds: `loop_implement` (phased runs through e3d-code with per-phase check and cross-family review), shared Brain memory, `loop_investigate` (read-only helper), and a provider registry. Pilot, Brain and e3d-code are separate projects: fix problems in them in their own repos, never by copying or patching their logic here.
 
