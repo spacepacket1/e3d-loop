@@ -7,7 +7,7 @@ import { runDoctor, formatDoctor } from "../src/doctor.ts";
 import { assertDepth, formatReport, runHelper } from "../src/helper.ts";
 import { formatRun, planRun, runImplementation, type PhaseRecord, type RunMode } from "../src/implement.ts";
 import { familyOf } from "../src/providers.ts";
-import { buildBrainContext, buildLesson, captureLesson, type BrainContext } from "../src/brain.ts";
+import { buildBrainContext, deriveBrainQuery, buildLesson, captureLesson, type BrainContext } from "../src/brain.ts";
 import { readFileSync } from "node:fs";
 import { stateDir } from "../src/config.ts";
 
@@ -63,7 +63,7 @@ export default function (pi: ExtensionAPI) {
       provider: Type.Optional(Type.Union([Type.Literal("claude"), Type.Literal("codex")], { description: "Force the e3d-code runner for phases without an explicit annotation." })),
       auto_route: Type.Optional(Type.Boolean({ description: "Let e3d-code classify each phase's complexity with one cheap model call. Default true." })),
       use_brain: Type.Optional(Type.Boolean({ description: "Retrieve notes from Brain (read-only) and give them to every writer and reviewer as shared memory. Default true; if Brain is unavailable the run continues and says so." })),
-      brain_query: Type.Optional(Type.String({ description: "Brain search terms. Default: the spec title and phase titles." })),
+      brain_query: Type.Optional(Type.String({ description: "Brain search terms. Default: distinctive terms derived from the whole spec (names, acronyms, code spans) plus the title and phase titles." })),
       brain_paths: Type.Optional(Type.Array(Type.String(), { description: "Exact vault-relative note paths to share instead of searching." })),
       capture_lesson: Type.Optional(Type.Boolean({ description: "After the run, propose a lesson to Brain's review INBOX (never curated memory), attributed to the models that wrote and reviewed. The user must confirm." })),
     }),
@@ -77,8 +77,7 @@ export default function (pi: ExtensionAPI) {
       if (params.use_brain !== false) {
         try {
           const spec = readFileSync(resolveSpec(ctx.cwd, params.spec_path), "utf8");
-          const title = (spec.match(/^#\s+(.+)$/m)?.[1] ?? "") + " " + phases.map((p) => p.title).join(" ");
-          brain = await buildBrainContext({ cwd: ctx.cwd, query: params.brain_query ?? title.trim(), paths: params.brain_paths });
+          brain = await buildBrainContext({ cwd: ctx.cwd, query: params.brain_query ?? deriveBrainQuery(spec, phases.map((p) => p.title)), paths: params.brain_paths });
           brainNote = brain.notes.length ? `Brain would share ${brain.notes.length} note(s): ${brain.notes.map((n) => n.citation).join(", ")}` : "Brain returned no accepted notes for this query; nothing will be shared";
         } catch (e: any) { brainNote = `Brain memory unavailable (${String(e?.message ?? e).slice(0, 160)}); continuing without it`; }
       } else brainNote = "Brain memory disabled for this run";
